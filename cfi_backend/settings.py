@@ -35,6 +35,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'a508-160-113-0-194.ngrok-free.app',
+    'https://gloire.hometeacher.cg',
 ]
 
 

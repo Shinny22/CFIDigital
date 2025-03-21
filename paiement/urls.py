@@ -12,3 +12,13 @@ router.register('paiements', PaiementViewSet)
 urlpatterns = [
     path('api/', include(router.urls)),
 ]
+
+
+from django.urls import path
+from .views import PlacePaymentView, CheckPaymentView, WithdrawalView
+
+urlpatterns = [
+    path('place-payment/', PlacePaymentView.as_view(), name='place-payment'),
+    path('check-payment/', CheckPaymentView.as_view(), name='check-payment'),
+    path('withdrawal/', WithdrawalView.as_view(), name='withdrawal'),
+]

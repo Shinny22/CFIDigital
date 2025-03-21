@@ -1,6 +1,5 @@
 from django.db import models
 from datetime import datetime
-# Create your models here.
 from django.forms import ValidationError
 from etudiant.models import Etudiant
 from academique.models import Classe

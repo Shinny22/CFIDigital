@@ -1,11 +1,9 @@
 from rest_framework.viewsets import ModelViewSet
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view,permission_classes
 from rest_framework.decorators import action
 from rest_framework import  viewsets, status
 from etudiant.models import Tuteur
-# from etudiant.serializers import PhotoSerializer, TuteurSerializer
-# from paiement.serializers import PaiementSerializer
 from .serializers import (
     AnneeAcademiqueSerializer, EtudiantSerializer,  EnregistrementSerializer, UniversiteSerializer
 )
@@ -14,16 +12,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import AnneeAcademique, Etudiant, Enregistrement, Universite
 from .serializers import (
-    EtudiantSerializer, PhotoSerializer, TuteurSerializer, EnregistrementSerializer,
-
+    EtudiantSerializer, EnregistrementSerializer,
 )
-from academique.models import Classe, Niveau, Cycle, Parcours, Mention
+from academique.models import Classe
 import requests
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
-# from paiement.serializers import FactureSerializer,FraisPaiementSerializer,PaiementSerializer
 import time
 import hmac
 import hashlib
@@ -33,7 +29,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
-import logging
+import json
+from dotenv import load_dotenv
 
 
 # Vue pour inscrire un étudiant
@@ -79,9 +76,54 @@ class UniversiteViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from rest_framework import serializers, viewsets, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from django.shortcuts import get_object_or_404
+from .models import Universite
+from etudiant.models import Etudiant, Photo, Tuteur
+from academique.models import Mention, Parcours, Cycle, Niveau, Classe
+from inscription.models import AnneeAcademique, Enregistrement
 
+class UniversiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Universite
+        fields = '__all__'
 
+class UniversiteValidationViewSet(viewsets.ViewSet):
+    @action(detail=False, methods=['post'])
+    def valider_donnees(self, request):
+        """
+        Vérifie si les données soumises existent bien dans la base de données
+        """
+        data = request.data
+        errors = {}
+        
+        # Vérification des objets existants
+        required_fields = {
+            "etudiant": Etudiant,
+            "photo": Photo,
+            "tuteur": Tuteur,
+            "mention": Mention,
+            "parcours": Parcours,
+            "cycle": Cycle,
+            "niveau": Niveau,
+            "classe": Classe,
+            "annee_academique": AnneeAcademique,
+            "enregistrement": Enregistrement,
+        }
 
+        for field, model in required_fields.items():
+            if field not in data:
+                errors[field] = "Ce champ est requis."
+            elif not model.objects.filter(id=data[field]).exists():
+                errors[field] = f"L'objet {field} avec ID {data[field]} n'existe pas."
+
+        if errors:
+            return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"message": "Les données sont valides."}, status=status.HTTP_200_OK)
+ 
 
 class AnneeAcademiqueViewSet(ModelViewSet):
     queryset = AnneeAcademique.objects.all()
@@ -95,214 +137,209 @@ class EnregistrementViewSet(ModelViewSet):
     queryset = Enregistrement.objects.all()
     serializer_class = EnregistrementSerializer
 
+# @api_view(['POST'])
+# def valider_inscription(request):
+#     if request.method == 'POST':
+#         # Récupérer les données avec vérification
+#         if not request.data:
+#             return Response({
+#                 "error": "Aucune donnée reçue"
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#         etudiant_data = request.data.get('etudiant', {})
+#         tuteur_data = request.data.get('tuteur', {})
+#         enregistrement_data = request.data.get('enregistrement', {})
+
+#         # Vérifier que toutes les données requises sont présentes
+#         required_etudiant_fields = ['nom', 'prenom', 'date_naissance']
+#         required_tuteur_fields = ['nom', 'prenom', 'tel']
+#         required_enregistrement_fields = ['classe']
+
+#         # Vérifier les champs de l'étudiant
+#         missing_etudiant = [field for field in required_etudiant_fields if not etudiant_data.get(field)]
+#         if missing_etudiant:
+#             return Response({
+#                 "error": "Données étudiant manquantes",
+#                 "missing_fields": missing_etudiant
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Vérifier les champs du tuteur
+#         missing_tuteur = [field for field in required_tuteur_fields if not tuteur_data.get(field)]
+#         if missing_tuteur:
+#             return Response({
+#                 "error": "Données tuteur manquantes",
+#                 "missing_fields": missing_tuteur
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Vérifier les champs d'enregistrement
+#         missing_enregistrement = [field for field in required_enregistrement_fields if not enregistrement_data.get(field)]
+#         if missing_enregistrement:
+#             return Response({
+#                 "error": "Données enregistrement manquantes",
+#                 "missing_fields": missing_enregistrement
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#         try:
+#             etudiant = Etudiant.objects.get(
+#                 nom=etudiant_data.get("nom"),
+#                 prenom=etudiant_data.get("prenom"),
+#                 date_naissance=etudiant_data.get("date_naissance")
+#             )
+#         except Etudiant.DoesNotExist:
+#             return Response({"error": "L'étudiant n'existe pas."}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Vérifier les informations de l'étudiant
+#         erreurs_etudiant = {}
+#         if etudiant.nom != etudiant_data.get("nom"):
+#             erreurs_etudiant["nom"] = "Le nom ne correspond pas."
+#         if etudiant.prenom != etudiant_data.get("prenom"):
+#             erreurs_etudiant["prenom"] = "Le prénom ne correspond pas."
+#         if etudiant.date_naissance.strftime("%Y-%m-%d") != etudiant_data.get("date_naissance"):
+#             erreurs_etudiant["date_naissance"] = "La date de naissance ne correspond pas."
+#         if etudiant.lieu_naissance != etudiant_data.get("lieu_naissance"):
+#             erreurs_etudiant["lieu_naissance"] = "Le lieu de naissance ne correspond pas."
+#         if etudiant.nationalite != etudiant_data.get("nationalite"):
+#             erreurs_etudiant["nationalite"] = "La nationalité ne correspond pas."
+
+#         # Vérifier le tuteur
+#         try:
+#             tuteur = Tuteur.objects.get(
+#                 nom=tuteur_data.get("nom"),
+#                 prenom=tuteur_data.get("prenom"),
+#                 tel=tuteur_data.get("tel")
+#             )
+#         except Tuteur.DoesNotExist:
+#             return Response({"error": "Le tuteur n'existe pas."}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Vérifier l'enregistrement
+#         try:
+#             classe = Classe.objects.get(id_classe=enregistrement_data.get('classe'))
+#             enregistrement = Enregistrement.objects.get(
+#                 etudiant=etudiant,
+#                 classe=classe
+#             )
+#         except (Classe.DoesNotExist, Enregistrement.DoesNotExist):
+#             return Response({"error": "Les données académiques sont incorrectes."}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Si tout est valide
+#         return Response({
+#             "message": "Validation réussie, les données sont conformes.",
+#             "etudiant": etudiant.id,
+#             "tuteur": tuteur.id,
+#             "enregistrement": enregistrement.id
+#         }, status=status.HTTP_200_OK)
+
+#     return Response({"error": "Méthode non autorisée"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 @api_view(['POST'])
 def valider_inscription(request):
     if request.method == 'POST':
-        # Récupérer les données avec vérification
         if not request.data:
-            return Response({
-                "error": "Aucune donnée reçue"
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Aucune donnée reçue"}, status=status.HTTP_400_BAD_REQUEST)
 
         etudiant_data = request.data.get('etudiant', {})
         tuteur_data = request.data.get('tuteur', {})
         enregistrement_data = request.data.get('enregistrement', {})
 
-        # Vérifier que toutes les données requises sont présentes
+        # Champs requis
         required_etudiant_fields = ['nom', 'prenom', 'date_naissance']
         required_tuteur_fields = ['nom', 'prenom', 'tel']
-        required_enregistrement_fields = ['classe']
+        required_enregistrement_fields = ['classe', 'semestre', 'type_enregistrement']
 
-        # Vérifier les champs de l'étudiant
-        missing_etudiant = [field for field in required_etudiant_fields if not etudiant_data.get(field)]
-        if missing_etudiant:
-            return Response({
-                "error": "Données étudiant manquantes",
-                "missing_fields": missing_etudiant
-            }, status=status.HTTP_400_BAD_REQUEST)
+        # Vérification des champs manquants
+        def check_missing_fields(data, required_fields, label):
+            missing_fields = [field for field in required_fields if not data.get(field)]
+            if missing_fields:
+                return Response({
+                    "error": f"Données {label} manquantes",
+                    "missing_fields": missing_fields
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        for label, data, required_fields in [
+            ("étudiant", etudiant_data, required_etudiant_fields),
+            ("tuteur", tuteur_data, required_tuteur_fields),
+            ("enregistrement", enregistrement_data, required_enregistrement_fields),
+        ]:
+            response = check_missing_fields(data, required_fields, label)
+            if response:
+                return response
 
-        # Vérifier les champs du tuteur
-        missing_tuteur = [field for field in required_tuteur_fields if not tuteur_data.get(field)]
-        if missing_tuteur:
-            return Response({
-                "error": "Données tuteur manquantes",
-                "missing_fields": missing_tuteur
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        # Vérifier les champs d'enregistrement
-        missing_enregistrement = [field for field in required_enregistrement_fields if not enregistrement_data.get(field)]
-        if missing_enregistrement:
-            return Response({
-                "error": "Données enregistrement manquantes",
-                "missing_fields": missing_enregistrement
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+        # Vérification et récupération de l'étudiant
         try:
             etudiant = Etudiant.objects.get(
-                nom=etudiant_data.get("nom"),
-                prenom=etudiant_data.get("prenom"),
-                date_naissance=etudiant_data.get("date_naissance")
+                nom=etudiant_data["nom"],
+                prenom=etudiant_data["prenom"],
+                date_naissance=etudiant_data["date_naissance"]
             )
         except Etudiant.DoesNotExist:
             return Response({"error": "L'étudiant n'existe pas."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier les informations de l'étudiant
-        erreurs_etudiant = {}
-        if etudiant.nom != etudiant_data.get("nom"):
-            erreurs_etudiant["nom"] = "Le nom ne correspond pas."
-        if etudiant.prenom != etudiant_data.get("prenom"):
-            erreurs_etudiant["prenom"] = "Le prénom ne correspond pas."
-        if etudiant.date_naissance.strftime("%Y-%m-%d") != etudiant_data.get("date_naissance"):
-            erreurs_etudiant["date_naissance"] = "La date de naissance ne correspond pas."
-        if etudiant.lieu_naissance != etudiant_data.get("lieu_naissance"):
-            erreurs_etudiant["lieu_naissance"] = "Le lieu de naissance ne correspond pas."
-        if etudiant.nationalite != etudiant_data.get("nationalite"):
-            erreurs_etudiant["nationalite"] = "La nationalité ne correspond pas."
-
-        # Vérifier le tuteur
+        # Vérification et récupération du tuteur
         try:
             tuteur = Tuteur.objects.get(
-                nom=tuteur_data.get("nom"),
-                prenom=tuteur_data.get("prenom"),
-                tel=tuteur_data.get("tel")
+                nom=tuteur_data["nom"],
+                prenom=tuteur_data["prenom"],
+                tel=tuteur_data["tel"]
             )
         except Tuteur.DoesNotExist:
             return Response({"error": "Le tuteur n'existe pas."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier l'enregistrement
+        # Vérification et récupération de la classe (par id ou nom)
+        classe_input = enregistrement_data.get('classe')
+        classe = None
+
+        if classe_input.isdigit():
+            # Si c'est un ID numérique
+            try:
+                classe = Classe.objects.get(id=classe_input)
+            except Classe.DoesNotExist:
+                return Response({"error": "Classe non trouvée avec cet ID."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Si c'est un nom
+            try:
+                classe = Classe.objects.get(nom=classe_input)
+            except Classe.DoesNotExist:
+                return Response({"error": "Classe non trouvée avec ce nom."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérification du semestre selon le type d'inscription
+        type_enregistrement = enregistrement_data["type_enregistrement"]
+        semestre = enregistrement_data["semestre"]
+
+        semestre_valide = {
+            "Inscription": ["S1"],
+            "Reinscription": ["S3", "S5"]
+        }
+
+        if type_enregistrement not in semestre_valide:
+            return Response({"error": "Type d'enregistrement invalide."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if semestre not in semestre_valide[type_enregistrement]:
+            return Response({
+                "error": f"Semestre invalide pour {type_enregistrement}.",
+                "semestres_valides": semestre_valide[type_enregistrement]
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérification de l'existence d'un enregistrement
         try:
-            classe = Classe.objects.get(id_classe=enregistrement_data.get('classe'))
             enregistrement = Enregistrement.objects.get(
                 etudiant=etudiant,
-                classe=classe
+                classe=classe,
+                semestre=semestre,
+                type_enregistrement=type_enregistrement
             )
-        except (Classe.DoesNotExist, Enregistrement.DoesNotExist):
-            return Response({"error": "Les données académiques sont incorrectes."}, status=status.HTTP_400_BAD_REQUEST)
+        except Enregistrement.DoesNotExist:
+            return Response({"error": "Aucun enregistrement trouvé avec ces critères."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Si tout est valide
         return Response({
             "message": "Validation réussie, les données sont conformes.",
             "etudiant": etudiant.id,
             "tuteur": tuteur.id,
-            "enregistrement": enregistrement.id
+            "enregistrement": enregistrement.id,
+            "classe": classe.id
         }, status=status.HTTP_200_OK)
 
     return Response({"error": "Méthode non autorisée"}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
-from django.views.decorators.csrf import csrf_exempt
-import requests
-import json
-from django.conf import settings
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-
-
-# @csrf_exempt 
-# @api_view(['POST'])
-# def place_payment(request):
-#     try:
-#         phone = request.data.get('phonenumber')
-#         amount = request.data.get('amount')
-        
-#         # Validation des données
-#         if not phone or not amount:
-#             return Response({
-#                 'error': 'Données manquantes',
-#                 'details': {
-#                     'phonenumber': 'Requis' if not phone else None,
-#                     'amount': 'Requis' if not amount else None
-#                 }
-#             }, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Vérification des clés
-#         if not hasattr(settings, 'MONETBIL_SERVICE_KEY') or not hasattr(settings, 'MONETBIL_SECRET_KEY'):
-#             return Response({
-#                 'error': 'Configuration Monetbil manquante',
-#                 'details': 'Veuillez configurer MONETBIL_SERVICE_KEY et MONETBIL_SECRET_KEY'
-#             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-#         # Normalisation du numéro de téléphone
-#         if not phone.startswith('242'):
-#             phone = f'242{phone}' if not phone.startswith('0') else f'242{phone[1:]}'
-
-#         # Génération du timestamp
-#         timestamp = str(int(time.time()))
-
-#         # Préparation des données
-#         params = {
-#             'amount': str(amount),
-#             'phonenumber': phone,
-#             'service': settings.MONETBIL_SERVICE_KEY,
-#             'country': 'CG',
-#             'currency': 'XAF',
-#             'operator': 'MTN',  # ou 'Airtel'
-#             'timestamp': timestamp
-#         }
-
-#         # Création de la signature
-#         params_to_sign = '&'.join([f"{k}={v}" for k, v in sorted(params.items())])
-#         signature = hmac.new(
-#             settings.MONETBIL_SECRET_KEY.encode(),
-#             params_to_sign.encode(),
-#             hashlib.sha1
-#         ).hexdigest()
-
-#         # Ajout de la signature aux paramètres
-#         params['signature'] = signature
-
-#         # En-têtes
-#         headers = {
-#             'Content-Type': 'application/x-www-form-urlencoded',
-#             'Accept': 'application/json'
-#         }
-
-#         # URL de l'API
-#         url = 'https://api.monetbil.com/payment/v1/placePayment'
-
-#         # Envoi de la requête
-#         response = requests.post(
-#             url,
-#             data=params,
-#             headers=headers,
-#             timeout=30
-#         )
-
-#         # Log pour débogage
-#         print("Paramètres envoyés:", params)
-#         print("Status Code:", response.status_code)
-#         print("Réponse:", response.text)
-
-#         if response.status_code == 200:
-#             try:
-#                 response_data = response.json()
-#                 return Response(response_data, status=status.HTTP_200_OK)
-#             except json.JSONDecodeError:
-#                 return Response({
-#                     'error': 'Réponse invalide du serveur',
-#                     'details': response.text
-#                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-#         else:
-#             return Response({
-#                 'error': 'Échec de la requête de paiement',
-#                 'details': response.text
-#             }, status=status.HTTP_400_BAD_REQUEST)
-
-#     except Exception as e:
-#         return Response({
-#             'error': 'Erreur inattendue',
-#             'details': str(e)
-#         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-import requests
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-import logging
-from dotenv import load_dotenv
-from django.utils.decorators import method_decorator
 
 logger = logging.getLogger(__name__)
 load_dotenv()  
@@ -325,8 +362,6 @@ def place_payment(request):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Clé du service MonetBil
-        
-
         # Préparation des données à envoyer
         data = {
             "service": settings.MONETBIL_SERVICE_KEY,
@@ -345,7 +380,7 @@ def place_payment(request):
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             "Authorization": f"Bearer {settings.MONETBIL_SECRET_KEY}"
-            # "Bearer RLoDzGvirr5Xikm24fX0EobXjNBmxq8CTqQQL5mByKl0qj66jDveYk8Rf743abSg"
+            "Bearer RLoDzGvirr5Xikm24fX0EobXjNBmxq8CTqQQL5mByKl0qj66jDveYk8Rf743abSg"
         }
 
         # Envoi de la requête à MonetBil
@@ -425,6 +460,41 @@ def check_payment(request):
 
 
 
+@csrf_exempt 
+@api_view(["POST"])
+def monetbil_notification(request):
+    """Gérer les notifications de paiement de Monetbil"""
+    
+    # Vérifier si request.data est bien un dictionnaire
+    if not request.data:
+        return Response({"error": "Aucune donnée reçue"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not isinstance(request.data, dict):
+        return Response({"error": "Format de données invalide"}, status=status.HTTP_400_BAD_REQUEST)
+
+    data = request.data
+    print("Notification reçue :", data)  # Debugging
+
+    # Vérifier si Monetbil a bien envoyé le statut du paiement
+    status_paiement = data.get("status", "")
+    transaction_id = data.get("transaction_id", "")
+
+    if not status_paiement:
+        return Response({"error": "Statut de paiement manquant"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if status_paiement == "SUCCESS":
+        # TODO: Ajouter ici la logique métier (mise à jour en base, etc.)
+        print(f"✅ Paiement réussi pour transaction ID {transaction_id}")
+        return Response({"message": "Paiement validé"}, status=status.HTTP_200_OK)
+    else:
+        print(f"⚠️ Paiement échoué ou en attente: {status_paiement}")
+        return Response({"message": "Notification traitée, mais paiement non validé"}, status=status.HTTP_200_OK)
+
+
+
+
+
+
 
 # @api_view(["POST"])
 # def place_payment(request):
@@ -463,7 +533,6 @@ def check_payment(request):
 
 
 
-
 # @api_view(["POST"])
 # def check_payment(request):
 #     """Vérifier un paiement"""
@@ -478,78 +547,162 @@ def check_payment(request):
 
 #     return Response(data, status=status.HTTP_200_OK)
 
-@csrf_exempt 
-@api_view(["POST"])
-def monetbil_notification(request):
-    """Gérer les notifications de paiement de Monetbil"""
-    
-    # Vérifier si request.data est bien un dictionnaire
-    if not request.data:
-        return Response({"error": "Aucune donnée reçue"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not isinstance(request.data, dict):
-        return Response({"error": "Format de données invalide"}, status=status.HTTP_400_BAD_REQUEST)
+# @csrf_exempt
+# def monetbil_notification(request):
+#     if request.method == "POST":
+#         try:
+#             data = json.loads(request.body)  # Récupération des données
+#             payment_id = data.get("paymentId")
+#             status = data.get("transaction", {}).get("status")
 
-    data = request.data
-    print("Notification reçue :", data)  # Debugging
+#             if payment_id and status is not None:
+#                 # Mise à jour du statut du paiement en BDD
+#                 if status == 1:
+#                     message = "Paiement réussi"
+#                 elif status == -1:
+#                     message = "Paiement annulé"
+#                 else:
+#                     message = "Paiement échoué"
 
-    # Vérifier si Monetbil a bien envoyé le statut du paiement
-    status_paiement = data.get("status", "")
-    transaction_id = data.get("transaction_id", "")
-
-    if not status_paiement:
-        return Response({"error": "Statut de paiement manquant"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if status_paiement == "SUCCESS":
-        # TODO: Ajouter ici la logique métier (mise à jour en base, etc.)
-        print(f"✅ Paiement réussi pour transaction ID {transaction_id}")
-        return Response({"message": "Paiement validé"}, status=status.HTTP_200_OK)
-    else:
-        print(f"⚠️ Paiement échoué ou en attente: {status_paiement}")
-        return Response({"message": "Notification traitée, mais paiement non validé"}, status=status.HTTP_200_OK)
+#                 print(f"Paiement {payment_id} - {message}")
+#                 return JsonResponse({"message": message}, status=200)
+#             else:
+#                 return JsonResponse({"error": "Données invalides"}, status=400)
+#         except json.JSONDecodeError:
+#             return JsonResponse({"error": "Format JSON invalide"}, status=400)
+#     return JsonResponse({"error": "Méthode non autorisée"}, status=405)
 
 
 
+
+
+import os
+import requests
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from urllib.parse import urlencode
+from .models import Transaction  # Importation du modèle de transaction
+from .serializers import PaymentSerializer, CheckPaymentSerializer, WithdrawalSerializer
+from dotenv import load_dotenv
 
-@csrf_exempt
-def monetbil_notification(request):
-    if request.method == "POST":
+load_dotenv()  # Charger les variables d'environnement
+
+class PlacePaymentView(APIView):
+    """
+    Vue pour initier un paiement via Monetbil.
+    """
+
+    def post(self, request):
+        serializer = PaymentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        monetbil_key = os.getenv("MONETBIL_KEY")
+        if not monetbil_key:
+            return Response({"error": "Les clés Monetbil ne sont pas configurées."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        url = "https://api.monetbil.com/payment/v1/placePayment"
+        data = {
+            "phonenumber": f"{serializer.validated_data['senderIndicatif']}{serializer.validated_data['senderPhone']}",
+            "service": monetbil_key,
+            "country": "CG",
+            "currency": "XAF",
+            "operator": serializer.validated_data['senderOperator'],
+            "amount": serializer.validated_data['amount'],
+            "user": serializer.validated_data['user']
+        }
+
         try:
-            data = json.loads(request.body)  # Récupération des données
-            payment_id = data.get("paymentId")
-            status = data.get("transaction", {}).get("status")
+            response = requests.post(url, json=data, headers={"Content-Type": "application/json"})
+            return Response(response.json(), status=response.status_code)
+        except requests.RequestException as e:
+            return Response({"error": "Une erreur est survenue", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if payment_id and status is not None:
-                # Mise à jour du statut du paiement en BDD
-                if status == 1:
-                    message = "Paiement réussi"
-                elif status == -1:
-                    message = "Paiement annulé"
+
+class CheckPaymentView(APIView):
+    """
+    Vue pour vérifier le statut d'un paiement via Monetbil.
+    """
+
+    def post(self, request):
+        serializer = CheckPaymentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        url = "https://api.monetbil.com/payment/v1/checkPayment"
+        data = urlencode({"paymentId": serializer.validated_data['paymentId']})
+
+        try:
+            response = requests.post(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+            result_data = response.json()
+
+            if "transaction" in result_data and "status" in result_data["transaction"]:
+                status_code = result_data["transaction"]["status"]
+
+                if status_code == "1":
+                    return Response({"message": "Paiement réussi"}, status=status.HTTP_200_OK)
+                elif status_code == "-1":
+                    return Response({"message": "Paiement annulé"}, status=status.HTTP_400_BAD_REQUEST)
+                elif status_code == "0":
+                    return Response({"message": "Paiement échoué"}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    message = "Paiement échoué"
-
-                print(f"Paiement {payment_id} - {message}")
-                return JsonResponse({"message": message}, status=200)
+                    return Response({"message": "Statut inconnu ou en attente"}, status=status.HTTP_202_ACCEPTED)
             else:
-                return JsonResponse({"error": "Données invalides"}, status=400)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Format JSON invalide"}, status=400)
-    return JsonResponse({"error": "Méthode non autorisée"}, status=405)
+                return Response({"error": "Transaction non valide"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except requests.RequestException as e:
+            return Response({"error": "Une erreur est survenue", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class WithdrawalView(APIView):
+    """
+    Vue pour effectuer un retrait via Monetbil.
+    """
 
+    def post(self, request):
+        serializer = WithdrawalSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        monetbil_key = os.getenv("MONETBIL_KEY")
+        monetbil_secret = os.getenv("MONETBIL_SECRET")
 
+        if not monetbil_key or not monetbil_secret:
+            return Response({"error": "Les clés Monetbil ne sont pas configurées."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        url = "https://api.monetbil.com/v1/payouts/withdrawal"
+        data = {
+            "service_key": monetbil_key,
+            "service_secret": monetbil_secret,
+            "phonenumber": f"{serializer.validated_data['receiverIndicatif']}{serializer.validated_data['receiverPhone']}",
+            "amount": str(serializer.validated_data['amount']),
+            "operator": serializer.validated_data['receiverOperator'],
+        }
 
+        try:
+            response = requests.post(url, data=urlencode(data), headers={"Content-Type": "application/x-www-form-urlencoded"})
+            response_data = response.json()
 
+            # Sauvegarder la transaction en base de données
+            transaction = Transaction.objects.create(
+                paymentId=serializer.validated_data['paymentId'],
+                receiverPhone=serializer.validated_data['receiverPhone'],
+                senderOperator=serializer.validated_data['senderOperator'],
+                receiverOperator=serializer.validated_data['receiverOperator'],
+                senderIndicatif=serializer.validated_data['senderIndicatif'],
+                receiverIndicatif=serializer.validated_data['receiverIndicatif'],
+                senderPhone=serializer.validated_data['senderPhone'],
+                amount=response_data.get("amount"),
+                transactionStatus=response_data.get("success"),
+            )
 
+            return Response({"message": "Retrait effectué avec succès", "data": response_data}, status=status.HTTP_200_OK)
 
-
-
+        except requests.RequestException as e:
+            return Response({"error": "Erreur lors du retrait", "details": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -614,75 +767,6 @@ def monetbil_notification(request):
 #         }, status=status.HTTP_400_BAD_REQUEST)
     
 
-    
-
-# @api_view(['POST'])
-# def valider_inscription(request):
-#     etudiant_data = request.data.get('etudiant')
-#     photo_data = request.data.get('photo')
-#     tuteur_data = request.data.get('tuteur')
-#     enregistrement_data = request.data.get('enregistrement')
-#     paiement_data = request.data.get('paiement')
-
-#     etudiant_serializer = EtudiantSerializer(data=etudiant_data)
-#     photo_serializer = PhotoSerializer(data=photo_data)
-#     tuteur_serializer = TuteurSerializer(data=tuteur_data)
-#     enregistrement_serializer = EnregistrementSerializer(data=enregistrement_data)
-#     paiement_serializer = PaiementSerializer(data=paiement_data)
-
-#     if (etudiant_serializer.is_valid() and photo_serializer.is_valid() and
-#         tuteur_serializer.is_valid() and enregistrement_serializer.is_valid() and
-#         paiement_serializer.is_valid()):
-
-#         etudiant = etudiant_serializer.save()
-#         photo_serializer.save(etudiant=etudiant)
-#         tuteur_serializer.save(etudiant=etudiant)
-#         enregistrement_serializer.save(etudiant=etudiant)
-#         paiement_serializer.save()
-
-#         return Response({"message": "Inscription validée avec succès"}, status=status.HTTP_201_CREATED)
-
-#     return Response({
-#         "etudiant": etudiant_serializer.errors,
-#         "photo": photo_serializer.errors,
-#         "tuteur": tuteur_serializer.errors,
-#         "enregistrement": enregistrement_serializer.errors,
-#         "paiement": paiement_serializer.errors
-#     }, status=status.HTTP_400_BAD_REQUEST)
-
-# class ValiderInscriptionView(APIView):
-#     def post(self, request):
-#         etudiant_data = request.data.get('etudiant')
-#         photo_data = request.data.get('photo')
-#         tuteur_data = request.data.get('tuteur')
-#         enregistrement_data = request.data.get('enregistrement')
-#         paiement_data = request.data.get('paiement')
-
-#         etudiant_serializer = EtudiantSerializer(data=etudiant_data)
-#         photo_serializer = PhotoSerializer(data=photo_data)
-#         tuteur_serializer = TuteurSerializer(data=tuteur_data)
-#         enregistrement_serializer = EnregistrementSerializer(data=enregistrement_data)
-#         paiement_serializer = PaiementSerializer(data=paiement_data)
-
-#         if (etudiant_serializer.is_valid() and photo_serializer.is_valid() and
-#             tuteur_serializer.is_valid() and enregistrement_serializer.is_valid() and
-#             paiement_serializer.is_valid()):
-
-#             etudiant = etudiant_serializer.save()
-#             photo_serializer.save(etudiant=etudiant)
-#             tuteur_serializer.save(etudiant=etudiant)
-#             enregistrement_serializer.save(etudiant=etudiant)
-#             paiement_serializer.save()
-
-#             return Response({"message": "Inscription validée avec succès"}, status=status.HTTP_201_CREATED)
-
-#         return Response({
-#             "etudiant": etudiant_serializer.errors,
-#             "photo": photo_serializer.errors,
-#             "tuteur": tuteur_serializer.errors,
-#             "enregistrement": enregistrement_serializer.errors,
-#             "paiement": paiement_serializer.errors
-#         }, status=status.HTTP_400_BAD_REQUEST)
 
 
 
