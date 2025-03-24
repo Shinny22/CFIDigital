@@ -208,7 +208,7 @@ def valider_inscription(request):
         # Vérifier que toutes les données requises sont présentes
         required_etudiant_fields = ['nom', 'prenom', 'date_naissance']
         required_tuteur_fields = ['nom', 'prenom', 'tel']
-        required_enregistrement_fields = ['classe', 'semestre', 'annee_academique']
+        required_enregistrement_fields = ['classe']
 
         # Vérifier les champs de l'étudiant
         missing_etudiant = [field for field in required_etudiant_fields if not etudiant_data.get(field)]
@@ -269,10 +269,14 @@ def valider_inscription(request):
         # Vérifier l'enregistrement
         try:
             classe = Classe.objects.get(nom_classe=enregistrement_data.get('classe'))
-            enregistrement = Enregistrement.objects.get(
+            annee_academique = AnneeAcademique.objects.get(nom_annee_academique=enregistrement_data.get('annee_academique'))
+
+            enregistrement = Enregistrement.objects.filter(
                 etudiant=etudiant,
-                classe=classe
-            )
+                classe=classe,
+                annee_academique=annee_academique
+            ).first()
+
         except (Classe.DoesNotExist, Enregistrement.DoesNotExist):
             return Response({"error": "Les données académiques sont incorrectes."}, status=status.HTTP_400_BAD_REQUEST)
 
