@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.routers import DefaultRouter
 from .views import (
    AnneeAcademiqueViewSet, EtudiantViewSet, 
-    EnregistrementViewSet, UniversiteViewSet, check_payment, place_payment,valider_inscription)
+    EnregistrementViewSet, UniversiteValidationViewSet, UniversiteViewSet, check_payment, place_payment,valider_inscription)
 
 router = DefaultRouter()
 
@@ -12,6 +12,7 @@ router.register('annees-academiques', AnneeAcademiqueViewSet)
 router.register('etudiants', EtudiantViewSet)
 router.register('enregistrements', EnregistrementViewSet)
 router.register('universites', UniversiteViewSet)
+router.register(r'universite-validation', UniversiteValidationViewSet, basename='universite-validation')
 
 
 
