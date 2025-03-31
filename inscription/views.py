@@ -238,7 +238,11 @@ def valider_inscription(request):
             etudiant = Etudiant.objects.get(
                 nom=etudiant_data.get("nom"),
                 prenom=etudiant_data.get("prenom"),
-                date_naissance=etudiant_data.get("date_naissance")
+                date_naissance=etudiant_data.get("date_naissance"),
+                lieu_naissance=etudiant_data.get("lieu_naissance"),
+                nationalite=etudiant_data.get("nationalite"),
+                telephone=etudiant_data.get("telephone"),
+                sexe=etudiant_data.get("sexe"),
             )
         except Etudiant.DoesNotExist:
             return Response({"error": "L'étudiant n'existe pas."}, status=status.HTTP_400_BAD_REQUEST)
@@ -255,6 +259,10 @@ def valider_inscription(request):
             erreurs_etudiant["lieu_naissance"] = "Le lieu de naissance ne correspond pas."
         if etudiant.nationalite != etudiant_data.get("nationalite"):
             erreurs_etudiant["nationalite"] = "La nationalité ne correspond pas."
+        if etudiant.telephone != etudiant_data.get("telephone"):
+            erreurs_etudiant["telephone"] = "Le numero telephone ne correspond pas."
+        if etudiant.sexe != etudiant_data.get("sexe"):
+            erreurs_etudiant["sexe"] = "Le sexe ne correspond pas."
 
         # Vérifier le tuteur
         try:
@@ -314,6 +322,9 @@ def place_payment(request):
         # Clé du service MonetBil
         # Préparation des données à envoyer
         data = {
+            "nom": "OYERE",
+            "prenom": "Gloire Nissi",
+            "date_naissance": "2003-06-07",
             "service": settings.MONETBIL_SERVICE_KEY,
             "phonenumber": phone,
             "amount": amount,
