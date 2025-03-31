@@ -43,6 +43,7 @@ if settings.DEBUG:
     path('academique/', include('academique.urls')),
     path('etudiant/', include('etudiant.urls')),
     path('inscription/', include('inscription.urls')),
+    path('monetbil/', include('inscription.urls')),
     # path('valider-inscription/', ValiderInscriptionView.as_view(), name='valider-inscription'),
     # path('valider-inscription/', valider_inscription, name='valider-inscription'),
     path('valider-inscription/', include('inscription.urls'),name='valider-inscription'),

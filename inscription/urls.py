@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.routers import DefaultRouter
 from .views import (
    AnneeAcademiqueViewSet, EtudiantViewSet, 
-    EnregistrementViewSet, UniversiteValidationViewSet, UniversiteViewSet, check_payment, place_payment,valider_inscription)
+    EnregistrementViewSet, UniversiteValidationViewSet, UniversiteViewSet, check_payment, monetbil_notification, place_payment,valider_inscription)
 
 router = DefaultRouter()
 
@@ -22,6 +22,7 @@ urlpatterns = [
     path('inscrire-etudiant/', UniversiteViewSet.as_view({'post': 'inscrire_etudiant'}), name='inscrire-etudiant'),
     path('place_payment/', place_payment, name="place_payment"),
     path('check_payment', check_payment, name="check_payment"),
+    path('notifications/', monetbil_notification, name="monetbil_notification"),
 ]
 
 

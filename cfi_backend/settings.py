@@ -222,7 +222,7 @@ SIMPLE_JWT = {
 }
 
 MONETBIL_SERVICE_KEY = "LqqXHk0XfPaPWuH08gPtYpL4WtGNy7dF"
-MONETBIL_NOTIFY_URL = "https://e076-102-129-81-158.ngrok-free.app/monetbil/notifications"
+MONETBIL_NOTIFY_URL = "http://127.0.0.1:8000/monetbil/notifications"
 MONETBIL_BASE_URL = "https://api.monetbil.com/payment/v2.1/placePayment"
 # Configuration Monetbil
 MONETBIL_SECRET_KEY = "RLoDzGvirr5Xikm24fX0EobXjNBmxq8CTqQQL5mByKl0qj66jDveYk8Rf743abSg"   # La clé secrète fournie par 

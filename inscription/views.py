@@ -322,9 +322,7 @@ def place_payment(request):
         # Clé du service MonetBil
         # Préparation des données à envoyer
         data = {
-            "nom": "OYERE",
-            "prenom": "Gloire Nissi",
-            "date_naissance": "2003-06-07",
+           
             "service": settings.MONETBIL_SERVICE_KEY,
             "phonenumber": phone,
             "amount": amount,
@@ -365,10 +363,12 @@ def place_payment(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 @csrf_exempt 
 @api_view(['POST'])
 def check_payment(request):
     # Récupérer et valider l'ID du paiement
+    print(request.data)
     payment_id = request.data.get('paymentId')
 
     if not payment_id:
@@ -382,7 +382,7 @@ def check_payment(request):
     try:
         response = requests.post(url, data=data, timeout=30)
         response_data = response.json() if response.content else {}
-
+        print(response_data)
         if response.status_code == 200:
             if 'transaction' in response_data:
                 transaction = response_data['transaction']
