@@ -192,6 +192,8 @@ class EnregistrementViewSet(ModelViewSet):
     queryset = Enregistrement.objects.all()
     serializer_class = EnregistrementSerializer
 
+
+@csrf_exempt 
 @api_view(['POST'])
 def valider_inscription(request):
     if request.method == 'POST':
@@ -300,7 +302,68 @@ def valider_inscription(request):
 
 
 logger = logging.getLogger(__name__)
-load_dotenv()  
+# load_dotenv()  
+# @csrf_exempt 
+# @api_view(['POST'])
+# @permission_classes([AllowAny]) 
+# def place_payment(request):
+#     try:
+#         phone = request.data.get('phonenumber')
+#         amount = request.data.get('amount')
+
+#         # Vérification des données requises
+#         if not phone or not amount:
+#             return Response({
+#                 'error': 'Données manquantes',
+#                 'details': {
+#                     'phonenumber': 'Requis' if not phone else None,
+#                     'amount': 'Requis' if not amount else None
+#                 }
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Clé du service MonetBil
+#         # Préparation des données à envoyer
+#         data = {
+           
+#             "service": settings.MONETBIL_SERVICE_KEY,
+#             "phonenumber": phone,
+#             "amount": amount,
+#             "country": "CG",
+#             "currency": "XAF",
+#             "notify_url" : settings.MONETBIL_NOTIFY_URL 
+#         }
+
+#         # URL de l'API MonetBil
+#         url = 'https://api.monetbil.com/payment/v1/placePayment'
+
+#         # En-têtes HTTP
+#         headers = {
+#             'Content-Type': 'application/json',
+#             'Accept': 'application/json',
+#             "Authorization": f"Bearer {settings.MONETBIL_SECRET_KEY}"
+#             "Bearer RLoDzGvirr5Xikm24fX0EobXjNBmxq8CTqQQL5mByKl0qj66jDveYk8Rf743abSg"
+#         }
+
+#         # Envoi de la requête à MonetBil
+#         response = requests.post(url, json=data, headers=headers, timeout=30, verify=False)
+
+#         print(settings.MONETBIL_SECRET_KEY)
+#         # Vérification du code HTTP de réponse
+#         if response.status_code == 200:
+
+#             return Response(response.json(), status=status.HTTP_200_OK)
+#         else:
+#             return Response({
+#                 'error': 'Échec de la requête de paiement',
+#                 'details': response.text
+#             }, status=response.status_code)
+
+#     except requests.exceptions.RequestException as e:
+#         return Response({
+#             'error': 'Erreur de connexion à MonetBil',
+#             'details': str(e)
+#         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @csrf_exempt 
 @api_view(['POST'])
 @permission_classes([AllowAny]) 
@@ -309,7 +372,6 @@ def place_payment(request):
         phone = request.data.get('phonenumber')
         amount = request.data.get('amount')
 
-        # Vérification des données requises
         if not phone or not amount:
             return Response({
                 'error': 'Données manquantes',
@@ -319,41 +381,30 @@ def place_payment(request):
                 }
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Clé du service MonetBil
-        # Préparation des données à envoyer
         data = {
-           
             "service": settings.MONETBIL_SERVICE_KEY,
             "phonenumber": phone,
             "amount": amount,
             "country": "CG",
             "currency": "XAF",
-            "notify_url" : settings.MONETBIL_NOTIFY_URL 
         }
 
-        # URL de l'API MonetBil
         url = 'https://api.monetbil.com/payment/v1/placePayment'
-
-        # En-têtes HTTP
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             "Authorization": f"Bearer {settings.MONETBIL_SECRET_KEY}"
-            "Bearer RLoDzGvirr5Xikm24fX0EobXjNBmxq8CTqQQL5mByKl0qj66jDveYk8Rf743abSg"
         }
 
-        # Envoi de la requête à MonetBil
         response = requests.post(url, json=data, headers=headers, timeout=30, verify=False)
+        print("Réponse MonetBil:", response.text)  # Debugging
 
-        print(settings.MONETBIL_SECRET_KEY)
-        # Vérification du code HTTP de réponse
         if response.status_code == 200:
-
             return Response(response.json(), status=status.HTTP_200_OK)
         else:
             return Response({
                 'error': 'Échec de la requête de paiement',
-                'details': response.text
+                'details': response.json()
             }, status=response.status_code)
 
     except requests.exceptions.RequestException as e:
@@ -363,61 +414,136 @@ def place_payment(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# @csrf_exempt 
+# @api_view(['POST'])
+# def check_payment(request):
+#     # Récupérer et valider l'ID du paiement
+#     print(request.data)
+#     payment_id = request.data.get('paymentId')
+
+#     if not payment_id:
+#         return Response({
+#             'error': 'ID de paiement requis'
+#         }, status=status.HTTP_400_BAD_REQUEST)
+
+#     data = {'paymentId': payment_id}
+#     url = 'https://api.monetbil.com/payment/v1/checkPayment'
+
+#     try:
+#         response = requests.post(url, json=data, timeout=30)
+#         response_data = response.json() if response.content else {}
+#         print(response_data)
+#         if response.status_code == 200:
+#             if 'transaction' in response_data:
+#                 transaction = response_data['transaction']
+#                 status_code = transaction.get('status')
+
+#                 if status_code == 1:
+#                     return Response({
+#                         'message': 'Paiement réussi',
+#                         'transaction': transaction
+#                     }, status=status.HTTP_200_OK)
+#                 elif status_code == -1:
+#                     return Response({
+#                         'message': 'Paiement annulé',
+#                         'transaction': transaction
+#                     }, status=status.HTTP_200_OK)
+#                 else:
+#                     return Response({
+#                         'message': 'Paiement échoué',
+#                         'transaction': transaction
+#                     }, status=status.HTTP_200_OK)
+#             else:
+#                 return Response({
+#                     'error': 'Détails de transaction non trouvés'
+#                 }, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             return Response({
+#                 'error': 'Échec de la vérification du paiement',
+#                 'details': response_data
+#             }, status=status.HTTP_400_BAD_REQUEST)
+
+#     except requests.exceptions.RequestException as e:
+#         return Response({
+#             'error': 'Erreur lors de la vérification du paiement',
+#             'details': str(e)
+#         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 @csrf_exempt 
 @api_view(['POST'])
 def check_payment(request):
-    # Récupérer et valider l'ID du paiement
-    print(request.data)
+    print("Données reçues :", request.data)  # Debugging
     payment_id = request.data.get('paymentId')
 
     if not payment_id:
-        return Response({
-            'error': 'ID de paiement requis'
-        }, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'ID de paiement requis'}, status=status.HTTP_400_BAD_REQUEST)
 
     data = {'paymentId': payment_id}
     url = 'https://api.monetbil.com/payment/v1/checkPayment'
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        "Authorization": f"Bearer {settings.MONETBIL_SECRET_KEY}"
+    }
 
     try:
-        response = requests.post(url, data=data, timeout=30)
-        response_data = response.json() if response.content else {}
-        print(response_data)
-        if response.status_code == 200:
-            if 'transaction' in response_data:
-                transaction = response_data['transaction']
-                status_code = transaction.get('status')
+        response = requests.post(url, json=data, headers=headers, timeout=30)
+        print("Réponse MonetBil:", response.text)  # Debugging
 
-                if status_code == 1:
-                    return Response({
-                        'message': 'Paiement réussi',
-                        'transaction': transaction
-                    }, status=status.HTTP_200_OK)
-                elif status_code == -1:
-                    return Response({
-                        'message': 'Paiement annulé',
-                        'transaction': transaction
-                    }, status=status.HTTP_200_OK)
-                else:
-                    return Response({
-                        'message': 'Paiement échoué',
-                        'transaction': transaction
-                    }, status=status.HTTP_200_OK)
+        response_data = response.json() if response.content else {}
+
+        if response.status_code == 200:
+            transaction = response_data.get('transaction')
+            if not transaction:
+                return Response({'error': 'Détails de transaction non trouvés'}, status=status.HTTP_400_BAD_REQUEST)
+
+            status_code = transaction.get('status')
+
+            if status_code == 1:
+                return Response({'message': 'Paiement réussi', 'transaction': transaction}, status=status.HTTP_200_OK)
+            elif status_code == -1:
+                return Response({'message': 'Paiement annulé', 'transaction': transaction}, status=status.HTTP_200_OK)
             else:
-                return Response({
-                    'error': 'Détails de transaction non trouvés'
-                }, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({
-                'error': 'Échec de la vérification du paiement',
-                'details': response_data
-            }, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Paiement en attente ou échoué', 'transaction': transaction}, status=status.HTTP_200_OK)
+
+        return Response({'error': 'Échec de la vérification du paiement', 'details': response_data}, status=response.status_code)
 
     except requests.exceptions.RequestException as e:
-        return Response({
-            'error': 'Erreur lors de la vérification du paiement',
-            'details': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': 'Erreur lors de la vérification du paiement', 'details': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# @csrf_exempt 
+# @api_view(["POST"])
+# def monetbil_notification(request):
+#     """Gérer les notifications de paiement de Monetbil"""
+    
+#     # Vérifier si request.data est bien un dictionnaire
+#     if not request.data:
+#         return Response({"error": "Aucune donnée reçue"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if not isinstance(request.data, dict):
+#         return Response({"error": "Format de données invalide"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     data = request.data
+#     print("Notification reçue :", data)  # Debugging
+
+#     # Vérifier si Monetbil a bien envoyé le statut du paiement
+#     status_paiement = data.get("status", "")
+#     transaction_id = data.get("transaction_id", "")
+
+#     if not status_paiement:
+#         return Response({"error": "Statut de paiement manquant"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     if status_paiement == "SUCCESS":
+#         # TODO: Ajouter ici la logique métier (mise à jour en base, etc.)
+#         print(f"✅ Paiement réussi pour transaction ID {transaction_id}")
+#         return Response({"message": "Paiement validé"}, status=status.HTTP_200_OK)
+#     else:
+#         print(f"⚠️ Paiement échoué ou en attente: {status_paiement}")
+#         return Response({"message": "Notification traitée, mais paiement non validé"}, status=status.HTTP_200_OK)
+
 
 
 
@@ -425,33 +551,43 @@ def check_payment(request):
 @api_view(["POST"])
 def monetbil_notification(request):
     """Gérer les notifications de paiement de Monetbil"""
-    
-    # Vérifier si request.data est bien un dictionnaire
-    if not request.data:
-        return Response({"error": "Aucune donnée reçue"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not isinstance(request.data, dict):
-        return Response({"error": "Format de données invalide"}, status=status.HTTP_400_BAD_REQUEST)
+    print("Content-Type reçu :", request.content_type)  # Afficher le Content-Type
+    print("Données brutes reçues :", request.body)  # Voir le contenu brut
 
-    data = request.data
-    print("Notification reçue :", data)  # Debugging
+    # Si le contenu est en text/plain, on tente de le convertir en JSON
+    if request.content_type == "text/plain":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return Response({"error": "Format de données invalide"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        data = request.data  # Django REST Framework gère déjà le JSON
 
-    # Vérifier si Monetbil a bien envoyé le statut du paiement
-    status_paiement = data.get("status", "")
-    transaction_id = data.get("transaction_id", "")
+    print("Notification complète reçue :", data)  # Debugging
+
+    # Vérification du statut de paiement
+    status_paiement = data.get("status")
+    transaction_id = data.get("paymentId")  # Assure-toi que MonetBil utilise bien "paymentId"
 
     if not status_paiement:
-        return Response({"error": "Statut de paiement manquant"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "error": "Statut de paiement manquant",
+            "details": data
+        }, status=status.HTTP_400_BAD_REQUEST)
 
-    if status_paiement == "SUCCESS":
-        # TODO: Ajouter ici la logique métier (mise à jour en base, etc.)
-        print(f"✅ Paiement réussi pour transaction ID {transaction_id}")
-        return Response({"message": "Paiement validé"}, status=status.HTTP_200_OK)
-    else:
-        print(f"⚠️ Paiement échoué ou en attente: {status_paiement}")
-        return Response({"message": "Notification traitée, mais paiement non validé"}, status=status.HTTP_200_OK)
+    if status_paiement == "REQUEST_ACCEPTED":
+        return Response({
+            "message": "Paiement en attente",
+            "transaction_id": transaction_id,
+            "details": data
+        }, status=status.HTTP_200_OK)
 
-
+    return Response({
+        "message": "Notification traitée",
+        "transaction_id": transaction_id,
+        "details": data
+    }, status=status.HTTP_200_OK)
 
 
 

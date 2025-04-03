@@ -32,10 +32,12 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'https://a508-160-113-0-194.ngrok-free.app',
     'https://a508-160-113-0-194.ngrok-free.app/monetbil/notifications',
+    'https://66e1-160-113-0-193.ngrok-free.app',
     'localhost',
     '127.0.0.1',
     'a508-160-113-0-194.ngrok-free.app',
     'https://gloire.hometeacher.cg',
+    "66e1-160-113-0-193.ngrok-free.app"
 ]
 
 
@@ -91,11 +93,14 @@ TEMPLATES = [
         },
     },
 ]
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     'https://a508-160-113-0-194.ngrok-free.app',
-    'https://e076-102-129-81-158.ngrok-free.app '  # Ajoute ton domaine ou ton adresse ngrok ici
+    'https://e076-102-129-81-158.ngrok-free.app ',
+    'https://66e1-160-113-0-193.ngrok-free.app',
+    'http://localhost:8081' , 
 ]
 
 
@@ -168,6 +173,7 @@ USE_TZ = True
 
 INTERNAL_IPS = [
     '127.0.0.1',
+    "66e1-160-113-0-193.ngrok-free.app"
 ]
 
 
