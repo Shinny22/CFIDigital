@@ -44,10 +44,14 @@ if settings.DEBUG:
     path('etudiant/', include('etudiant.urls')),
     path('inscription/', include('inscription.urls')),
     path('monetbil/', include('inscription.urls')),
+    path('api/paiement/', include('paiement.urls')),
     # path('valider-inscription/', ValiderInscriptionView.as_view(), name='valider-inscription'),
     # path('valider-inscription/', valider_inscription, name='valider-inscription'),
     path('valider-inscription/', include('inscription.urls'),name='valider-inscription'),
-    path('', include('inscription.urls'), name='place_payment'),
-    path('', include('inscription.urls'), name='check_payment'),
+    # path('', include('inscription.urls'), name='place_payment'),
+    # path('', include('inscription.urls'), name='check_payment'),
     path('paiement/', include('paiement.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+

@@ -197,8 +197,16 @@ class EnregistrementViewSet(ModelViewSet):
 @api_view(['POST'])
 def valider_inscription(request):
     if request.method == 'POST':
+        print("=== Début de la requête ===")
+        print("Headers reçus:", dict(request.headers))
+        print("Content-Type:", request.content_type)
+        print("Méthode:", request.method)
+        print("Données brutes:", request.body)
+        print("Données parsées:", request.data)
+        
         # Récupérer les données avec vérification
         if not request.data:
+            print("Aucune donnée reçue")
             return Response({
                 "error": "Aucune donnée reçue"
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -207,14 +215,19 @@ def valider_inscription(request):
         tuteur_data = request.data.get('tuteur', {})
         enregistrement_data = request.data.get('enregistrement', {})
 
+        print("Données étudiant:", etudiant_data)
+        print("Données tuteur:", tuteur_data)
+        print("Données enregistrement:", enregistrement_data)
+
         # Vérifier que toutes les données requises sont présentes
-        required_etudiant_fields = ['nom', 'prenom', 'date_naissance']
+        required_etudiant_fields = ['nom', 'prenom', 'date_naissance','lieu_naissance','nationalite','telephone','sexe']
         required_tuteur_fields = ['nom', 'prenom', 'tel']
         required_enregistrement_fields = ['classe']
 
         # Vérifier les champs de l'étudiant
         missing_etudiant = [field for field in required_etudiant_fields if not etudiant_data.get(field)]
         if missing_etudiant:
+            print("Champs manquants étudiant:", missing_etudiant)
             return Response({
                 "error": "Données étudiant manquantes",
                 "missing_fields": missing_etudiant

@@ -30,3 +30,20 @@ class Paiement(models.Model):
 
     def __str__(self):
         return self.numero_paiement
+
+
+
+class Transaction(models.Model):
+    paymentId = models.CharField(max_length=100)
+    senderPhone = models.CharField(max_length=20)
+    receiverPhone = models.CharField(max_length=20)
+    senderOperator = models.CharField(max_length=20)
+    receiverOperator = models.CharField(max_length=20)
+    senderIndicatif = models.CharField(max_length=5)
+    receiverIndicatif = models.CharField(max_length=5)
+    amount = models.FloatField()
+    transactionStatus = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Transaction {self.paymentId} - {self.amount} XAF"

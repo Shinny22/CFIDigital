@@ -70,3 +70,6 @@ class Classe(models.Model):
 
     def __str__(self):
         return self.nom_classe
+
+
+

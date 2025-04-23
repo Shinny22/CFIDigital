@@ -30,14 +30,16 @@ SECRET_KEY = 'django-insecure-v&=^-f46+s)3g1nw!t(y6a3is%w)pxf1e#oiwwhrsx2dolq#!u
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'https://a508-160-113-0-194.ngrok-free.app',
+   
     'https://a508-160-113-0-194.ngrok-free.app/monetbil/notifications',
-    'https://66e1-160-113-0-193.ngrok-free.app',
     'localhost',
     '127.0.0.1',
     'a508-160-113-0-194.ngrok-free.app',
     'https://gloire.hometeacher.cg',
-    "66e1-160-113-0-193.ngrok-free.app"
+    '10.0.2.2',  # Pour Android Emulator
+    '192.168.1.*',  # Pour les appareils sur le même réseau local
+    "c6d2-102-129-81-99.ngrok-free.app",
+    "http://localhost:8080",
 ]
 
 
@@ -73,7 +75,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',  
-
+ 
+    
 ]
 
 ROOT_URLCONF = 'cfi_backend.urls'
@@ -97,12 +100,38 @@ CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
-    'https://a508-160-113-0-194.ngrok-free.app',
-    'https://e076-102-129-81-158.ngrok-free.app ',
-    'https://66e1-160-113-0-193.ngrok-free.app',
-    'http://localhost:8081' , 
+   
+    'http://localhost:8081',
+    'https://17ee-169-255-121-6.ngrok-free.app',
+    'http://localhost:19006',  # Pour Expo
+    'exp://localhost:19000',   # Pour Expo
+    'https://c6d2-102-129-81-99.ngrok-free.app',
+    'https://c6d2-102-129-81-99.ngrok-free.app',
+    "http://localhost:8080",
 ]
 
+# Configuration CORS plus permissive pour le développement
+CORS_ALLOW_ALL_ORIGINS = True  # À utiliser uniquement en développement
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Stockage en base de données
 # Autres options possibles :
@@ -174,6 +203,7 @@ USE_TZ = True
 INTERNAL_IPS = [
     '127.0.0.1',
     "66e1-160-113-0-193.ngrok-free.app"
+
 ]
 
 
@@ -212,6 +242,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.MultiPartParser',
+        'rest_framework.parsers.FormParser',
+
     ],
 
     'DEFAULT_PAGINATION_CLASS': 
@@ -233,7 +266,11 @@ MONETBIL_BASE_URL = "https://api.monetbil.com/payment/v2.1/placePayment"
 # Configuration Monetbil
 MONETBIL_SECRET_KEY = "RLoDzGvirr5Xikm24fX0EobXjNBmxq8CTqQQL5mByKl0qj66jDveYk8Rf743abSg"   # La clé secrète fournie par 
 #  curl -Method POST -Uri "https://api.monetbil.com/payment/v1/placePayment" -Headers @{"Content-Type"="application/json"} -Body '{"service": "LqqXHk0XfPaPWuH08gPtYpL4WtGNy7dF", "phonenumber": "242068503126","country":"CG", "amount": "100", "notify_url": " https://ed33-102-129-75-212.ngrok-free.app /monetbil/notifications"}'
-CSRF_TRUSTED_ORIGINS = ['https://e076-102-129-81-158.ngrok-free.app/place_payment/', 'https://e076-102-129-81-158.ngrok-free.app/check_payment/'] # Ajoute l'URL de ton frontend ici.
+CSRF_TRUSTED_ORIGINS = ['https://e076-102-129-81-158.ngrok-free.app/place_payment/', 'https://e076-102-129-81-158.ngrok-free.app/check_payment/',"https://c6d2-102-129-81-99.ngrok-free.app","http://localhost:8080"] # Ajoute l'URL de ton frontend ici.
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = True
 CSRF_USE_SESSIONS = False
+
+
+from dotenv import load_dotenv
+load_dotenv()

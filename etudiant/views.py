@@ -9,12 +9,18 @@ from .serializers import (
     TuteurSerializer, 
     
 )
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class EtudiantViewSet(ModelViewSet):
+    parser_classes = [MultiPartParser, FormParser]
     queryset = Etudiant.objects.all()
     serializer_class = EtudiantSerializer
+    serializer_class = TuteurSerializer
 
       # Mise à jour complète (PUT)
     def update(self, request, *args, **kwargs):
@@ -38,10 +44,14 @@ class EtudiantViewSet(ModelViewSet):
         self.perform_destroy(instance)
         return Response({"message": "Étudiant supprimé avec succès."}, status=status.HTTP_204_NO_CONTENT)
 
+
+@method_decorator(csrf_exempt, name='dispatch')
 class PhotoViewSet(ModelViewSet):
     queryset = Photo.objects.all()
     serializer_class = PhotoSerializer
 
+
+@method_decorator(csrf_exempt, name='dispatch')
 class TuteurViewSet(ModelViewSet):
     queryset = Tuteur.objects.all()
     serializer_class = TuteurSerializer

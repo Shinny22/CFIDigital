@@ -4,11 +4,10 @@ from django.core.validators import RegexValidator, EmailValidator, MinLengthVali
 
 class Tuteur(models.Model):
     id_tuteur = models.AutoField(primary_key=True)
-    nom = models.CharField(max_length=100)
+    tuteur_nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
     tel = models.CharField(max_length=15)
-    email = models.EmailField(unique=True)
-    nationalite_tuteur = models.CharField(max_length=50)
+    
     
     def __str__(self):
         return f"{self.nom}"
